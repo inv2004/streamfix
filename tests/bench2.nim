@@ -1,6 +1,6 @@
 {.compile: "fix.c".}
 
-import newfix/streamfix
+import streamfix
 
 import criterion
 
@@ -54,12 +54,12 @@ proc tag3(fs: FS, tag: cstring): cstring =
 var cfg = newDefaultConfig()
 
 benchmark cfg:
-  let s4 = readLines("tests/test1.fix", 5)[4]
+  let s4 = readLines("tests/test2.fix", 5)[4]
 
   proc fix1(): int =
     var f = initFix(s4)
     for i in 1..20:
-      result += f.tag(190).len
+      result += f.tagFloat(190).int
 
   proc fix2(): int =
     var f = initFix2(s4)
@@ -75,8 +75,8 @@ benchmark cfg:
   proc benchFix1() {.measure.} =
     blackBox fix1()
 
-  proc benchFix2() {.measure.} =
-    blackBox fix2()
+  # proc benchFix2() {.measure.} =
+  #   blackBox fix2()
 
-  proc benchFix3() {.measure.} =
-    blackBox fix3()
+  # proc benchFix3() {.measure.} =
+  #   blackBox fix3()

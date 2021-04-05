@@ -1,8 +1,8 @@
 import unittest
 
-import newfix/streamfix
+import streamfix
 
-let s = readLines("tests/test1.fix",5)
+let s = readLines("tests/test2.fix",5)
 
 test "fixstr1 field":
   var f = initFix(s[0])
