@@ -59,7 +59,7 @@ benchmark cfg:
   proc fix1(): int =
     var f = initFix(s4)
     for i in 1..20:
-      result += f.tagFloat(190).int
+      result += f.tagAnyStr([188, 190]).len
 
   proc fix2(): int =
     var f = initFix2(s4)
