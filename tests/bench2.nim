@@ -56,10 +56,25 @@ var cfg = newDefaultConfig()
 benchmark cfg:
   let s4 = readLines("tests/test2.fix", 5)[4]
 
-  proc fix1(): int =
+  proc fix1R(): int =
     var f = initFix(s4)
+    var res: string
     for i in 1..20:
-      result += f.tagAnyStr([188, 190]).len
+      if f.tagStr(190, res):
+        result += res.len
+
+  proc fix1A(): int =
+    var f = initFix(s4)
+    var v: float
+    for i in 1..20:
+      if 0 < tagAnyFloat(f, [188, 190], v):
+        result += 1
+
+  proc benchFix1R() {.measure.} =
+    blackBox fix1R()
+
+  proc benchFix1A() {.measure.} =
+    blackBox fix1A()
 
   proc fix2(): int =
     var f = initFix2(s4)
@@ -71,9 +86,6 @@ benchmark cfg:
     for i in 1..20:
       result += f.tag3("190=").len
     c_free(f.c)
-
-  proc benchFix1() {.measure.} =
-    blackBox fix1()
 
   # proc benchFix2() {.measure.} =
   #   blackBox fix2()

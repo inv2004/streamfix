@@ -6,107 +6,69 @@ type
     pos: int
     len: int
 
+const DELIMITER = '\x01'
+
 proc initFix*(msg: string): StreamFix =
   result.msg = msg
   result.pos = 0
   result.len = result.msg.len
 
-proc getTag[T](fs: var StreamFix, tag: int): T =
-  var t: int
+proc getAnyTag[N: static(int), T](fs: var StreamFix, tag: array[N, int], val: var T): int =
   while fs.pos < fs.len:
     while fs.msg[fs.pos] != '=':
-      t = t * 10 + fs.msg[fs.pos].int - '0'.int
+      result = result * 10 + fs.msg[fs.pos].int - '0'.int
       inc fs.pos
     inc fs.pos
-    if tag == t:
+    if result in tag:
       when T is string:
-        t = fs.pos
-        while fs.msg[fs.pos] != '\x01':
+        let start = fs.pos
+        while fs.msg[fs.pos] != DELIMITER:
           inc fs.pos
-        return fs.msg[t..<fs.pos]
+        val = fs.msg[start..<fs.pos]
+        return
       elif T is char:
-        t = fs.pos
-        while fs.msg[fs.pos] != '\x01':
+        let start = fs.pos
+        while fs.msg[fs.pos] != DELIMITER:
           inc fs.pos
-        return fs.msg[t]
+        val = fs.msg[start]
+        return
       elif T is int:
-        while fs.msg[fs.pos] != '\x01':
-          result = result * 10 + fs.msg[fs.pos].int - '0'.int
+        while fs.msg[fs.pos] != DELIMITER:
+          val = val * 10 + fs.msg[fs.pos].int - '0'.int
           inc fs.pos
         return
       elif T is uint:
-        while fs.msg[fs.pos] != '\x01':
-          result = result * 10 + fs.msg[fs.pos].uint - '0'.uint
-          inc fs.pos
-        return
-      elif T is uint:
-        while fs.msg[fs.pos] != '\x01':
-          result = result * 10 + fs.msg[fs.pos].uint - '0'.uint
+        while fs.msg[fs.pos] != DELIMITER:
+          val = val * 10 + fs.msg[fs.pos].uint - '0'.uint
           inc fs.pos
         return
       elif T is float:
-        discard parseFloat(fs.msg, result, fs.pos)
+        discard parseFloat(fs.msg, val, fs.pos)
         return
       else:
         {.error: "getTag does not support the generic type".}
     else:
-      t = 0
-      while fs.msg[fs.pos] != '\x01':
+      result = 0
+      while fs.msg[fs.pos] != DELIMITER:
         inc fs.pos
       inc fs.pos
 
-proc getAnyTag[N: static(int), T](fs: var StreamFix, tag: array[N, int]): T =
-  var t: int
-  while fs.pos < fs.len:
-    while fs.msg[fs.pos] != '=':
-      t = t * 10 + fs.msg[fs.pos].int - '0'.int
-      inc fs.pos
-    inc fs.pos
-    if t in tag:
-      when T is string:
-        t = fs.pos
-        while fs.msg[fs.pos] != '\x01':
-          inc fs.pos
-        return fs.msg[t..<fs.pos]
-      elif T is char:
-        t = fs.pos
-        while fs.msg[fs.pos] != '\x01':
-          inc fs.pos
-        return fs.msg[tt]
-      elif T is int:
-        while fs.msg[fs.pos] != '\x01':
-          result = result * 10 + fs.msg[fs.pos].int - '0'.int
-          inc fs.pos
-        return
-      elif T is uint:
-        while fs.msg[fs.pos] != '\x01':
-          result = result * 10 + fs.msg[fs.pos].uint - '0'.uint
-          inc fs.pos
-        return
-      elif T is float:
-        discard parseFloat(fs.msg, result, fs.pos)
-        return
-      else:
-        {.error: "getTag does not support the generic type".}
-    else:
-      t = 0
-      while fs.msg[fs.pos] != '\x01':
-        inc fs.pos
-      inc fs.pos
+template mkTag(name: untyped, t: untyped) =
+  proc `tag name`*(fs: var StreamFix, tag: int, val: var t): bool = 0 < getAnyTag[1, t](fs, [tag], val)
+  proc `tagAny name`*[N: static int](fs: var StreamFix, tag: array[N, int], val: var t): int = getAnyTag[N, t](fs, tag, val)
 
-proc tagStr*(fs: var StreamFix, tag: int): string = getTag[string](fs, tag)
-proc tagChar*(fs: var StreamFix, tag: int): char = getTag[char](fs, tag)
-proc tagInt*(fs: var StreamFix, tag: int): int = getTag[int](fs, tag)
-proc tagUInt*(fs: var StreamFix, tag: int): uint = getTag[uint](fs, tag)
-proc tagFloat*(fs: var StreamFix, tag: int): float = getTag[float](fs, tag)
-
-proc tagAnyStr*[N: static(int)](fs: var StreamFix, tags: array[N, int]): string = getAnyTag[N, string](fs, tags)
+mkTag(Str, string)
+mkTag(Char, char)
+mkTag(Int, int)
+mkTag(UInt, uint)
+mkTag(Float, float)
 
 proc main() =
   let s = readLines("tests/test1.fix", 5)
   var f1 = initFix(s[4])
+  var res: string
   for i in 1..20:
-    echo f1.tagStr(190)
+    discard f1.tagStr(190, res)
 
 when isMainModule:
   main()
