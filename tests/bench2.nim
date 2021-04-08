@@ -65,16 +65,77 @@ benchmark cfg:
 
   proc fix1A(): int =
     var f = initFix(s4)
-    var v: float
-    for i in 1..20:
-      if 0 < tagAnyFloat(f, [188, 190], v):
-        result += 1
+    doAssert 'i' == f.getChar(MsgType.int)
+    var v: string
+    discard f.tagAnyStr([NoQuoteSets.int], v)
+    doAssert "5" == v
+    while true:
+      let t = f.getAnyTagGrp(grpI, [QuoteSetID.int], v)
+      if 0 == t:
+        break
+      discard f.tagAnyStr([NoQuoteEntries.int], v)
+      while true:
+        let t = f.getAnyTagGrp(grpII, [BidSpotRate.int, OfferSpotRate.int], v)
+        if 0 == t:
+          break
+    let t = f.tagAnyStr([CheckSum.int], v)
 
-  proc benchFix1R() {.measure.} =
-    blackBox fix1R()
+  proc fix2A(): int =
+    var f = initFix(s4)
+    doAssert 'i' == f.getChar(MsgType.int)
+    var v: string
+    while true:
+      if not f.tagStr(QuoteSetID.int, v):
+        break
+      discard f.tagAnyStr([NoQuoteEntries.int], v)
+      while true:
+        let t = f.getAnyTagGrp(grpII, [BidSpotRate.int, OfferSpotRate.int], v)
+        if 0 == t:
+          break
+    let t = f.tagAnyStr([CheckSum.int], v)
+
+  proc fix3A(): int =
+    var f = initFix(s4)
+    doAssert 'i' == f.getChar(MsgType.int)
+    var v: string
+    while true:
+      if not f.tagStr(QuoteSetID.int, v):
+        break
+      discard f.tagAnyStr([NoQuoteEntries.int], v)
+      while true:
+        let t = f.getAnyTagGrp(grpII, [BidSpotRate.int, OfferSpotRate.int], v)
+        if 0 == t:
+          break
+    let t = f.tagAnyStr([CheckSum.int], v)
+
+  proc fix4A(): int =
+    var f = initFix(s4)
+    doAssert 'i' == f.getChar(MsgType.int)
+    var v: string
+    while true:
+      if not f.tagStr(QuoteSetID.int, v):
+        break
+      discard f.tagAnyStr([NoQuoteEntries.int], v)
+      while true:
+        let t = f.tagAnyStrUntil([BidSpotRate.int, OfferSpotRate.int], 295, v)
+        if 0 == t:
+          break
+    let t = f.tagAnyStr([CheckSum.int], v)
+
+  # proc benchFix1R() {.measure.} =
+  #   blackBox fix1R()
 
   proc benchFix1A() {.measure.} =
     blackBox fix1A()
+
+  proc benchFix2A() {.measure.} =
+    blackBox fix2A()
+
+  proc benchFix3A() {.measure.} =
+    blackBox fix3A()
+
+  proc benchFix4A() {.measure.} =
+    blackBox fix4A()
 
   proc fix2(): int =
     var f = initFix2(s4)
