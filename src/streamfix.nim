@@ -1,6 +1,8 @@
 from parseutils import parseFloat
+import intsets
 
 include fields44
+include groups
 
 type
   StreamFix* = object
@@ -8,24 +10,28 @@ type
     pos: int
     len: int
 
+  StreamFixRef* = ref StreamFix
+
+  Group*[grp: static[GroupSet]] = object
+    sf: StreamFixRef
+    len*: int
+
 const DELIMITER = '\x01'
 
-proc initFix*(msg: string): StreamFix =
+proc initFix*(msg: string): StreamFixRef =
+  new(result)
   result.msg = msg
   result.pos = 0
   result.len = result.msg.len
 
-const grpI* = [302, 295, 299, 106, 134, 135, 188, 190]
-const grpII* = [299, 106, 134, 135, 188, 190]
-
-proc getAnyTagGrp*[N: static(int), T](fs: var StreamFix, grp:array[8, int], tag: array[N, int], val: var T): int =
+proc getAnyTagGrp*[N: static(int), T](fs: StreamFixRef, grp: GroupSet, tag: array[N, int], val: var T): int =
   while fs.pos < fs.len:
     let prev = fs.pos
     while fs.msg[fs.pos] != '=':
       result = result * 10 + fs.msg[fs.pos].int - '0'.int
       inc fs.pos
     inc fs.pos
-    if result in tag:
+    if tag.contains(result):
       when T is string:
         let start = fs.pos
         while fs.msg[fs.pos] != DELIMITER:
@@ -60,49 +66,7 @@ proc getAnyTagGrp*[N: static(int), T](fs: var StreamFix, grp:array[8, int], tag:
       fs.pos = prev
       return
 
-proc getAnyTagGrp*[N: static(int), T](fs: var StreamFix, grp:array[6, int], tag: array[N, int], val: var T): int =
-  while fs.pos < fs.len:
-    let prev = fs.pos
-    while fs.msg[fs.pos] != '=':
-      result = result * 10 + fs.msg[fs.pos].int - '0'.int
-      inc fs.pos
-    inc fs.pos
-    if result in tag:
-      when T is string:
-        let start = fs.pos
-        while fs.msg[fs.pos] != DELIMITER:
-          inc fs.pos
-        val = fs.msg[start..<fs.pos]
-      elif T is char:
-        let start = fs.pos
-        while fs.msg[fs.pos] != DELIMITER:
-          inc fs.pos
-        val = fs.msg[start]
-      elif T is int:
-        while fs.msg[fs.pos] != DELIMITER:
-          val = val * 10 + fs.msg[fs.pos].int - '0'.int
-          inc fs.pos
-      elif T is uint:
-        while fs.msg[fs.pos] != DELIMITER:
-          val = val * 10 + fs.msg[fs.pos].uint - '0'.uint
-          inc fs.pos
-      elif T is float:
-        discard parseFloat(fs.msg, val, fs.pos)
-      else:
-        {.error: "getTag does not support the generic type".}
-      inc fs.pos
-      return
-    elif result in grp:
-      result = 0
-      while fs.msg[fs.pos] != DELIMITER:
-        inc fs.pos
-      inc fs.pos
-    else:
-      result = 0
-      fs.pos = prev
-      return
-
-proc getAnyTag*[N: static(int), T](fs: var StreamFix, tag: array[N, int], val: var T): int =
+proc getAnyTag*[N: static(int), T](fs: StreamFixRef, tag: array[N, int], val: var T): int =
   var pos = fs.pos
   while pos < fs.len:
     while fs.msg[pos] != '=':
@@ -139,7 +103,7 @@ proc getAnyTag*[N: static(int), T](fs: var StreamFix, tag: array[N, int], val: v
         inc pos
       inc pos
 
-proc getAnyTagUntil*[N: static(int), T](fs: var StreamFix, tag: array[N, int], until: int, val: var T): int =
+proc getAnyTagUntil*[N: static(int), T](fs: StreamFixRef, tag: array[N, int], until: int, val: var T): int =
   var pos = fs.pos
   while pos < fs.len:
     while fs.msg[pos] != '=':
@@ -179,11 +143,19 @@ proc getAnyTagUntil*[N: static(int), T](fs: var StreamFix, tag: array[N, int], u
         inc pos
       inc pos
 
+proc getGroup*[N,F](fs: StreamFixRef, gd: static GroupDesc[N, F]): Group[F] =
+  discard getAnyTag[1, int](fs, [gd.num], result.len)
+  result.sf = fs
+  return
+
+proc getAnyTagG*[N: static(int), T](g: Group, tag: array[N, int], val: var T): int =
+  getAnyTagGrp[N, T](g.sf, g.grp, tag, val)
+
 template mkTag(name: untyped, t: untyped) =
-  proc `tag name`*(fs: var StreamFix, tag: int, val: var t): bool = 0 < getAnyTag[1, t](fs, [tag], val)
-  proc `tagAny name`*[N: static int](fs: var StreamFix, tag: array[N, int], val: var t): int = getAnyTag[N, t](fs, tag, val)
-  proc `tagAny name Until`*[N: static int](fs: var StreamFix, tag: array[N, int], until: int, val: var t): int = getAnyTagUntil[N, t](fs, tag, until, val)
-  proc `get name`*(fs: var StreamFix, tag: int): t = discard getAnyTag[1, t](fs, [tag], result)
+  proc `tag name`*(fs: StreamFixRef, tag: int, val: var t): bool = 0 < getAnyTag[1, t](fs, [tag], val)
+  proc `tagAny name`*[N: static int](fs: StreamFixRef, tag: array[N, int], val: var t): int = getAnyTag[N, t](fs, tag, val)
+  proc `tagAny name Until`*[N: static int](fs: StreamFixRef, tag: array[N, int], until: int, val: var t): int = getAnyTagUntil[N, t](fs, tag, until, val)
+  proc `get name`*(fs: StreamFixRef, tag: int): t = discard getAnyTag[1, t](fs, [tag], result)
 
 mkTag(Str, string)
 mkTag(Char, char)

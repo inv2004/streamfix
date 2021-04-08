@@ -13,53 +13,53 @@ test "fixstr1 iter":
   var f = initFix(s[4])
   check 'i' == f.getChar(MsgType.int)
   var v: string
-  discard f.tagAnyStr([NoQuoteSets.int], v)
-  doAssert "5" == v
+  let gr1 = f.getGroup(GrpNoQuoteSets)
+  doAssert 5 == gr1.len
   while true:
-    let t = f.getAnyTagGrp(grpI, [QuoteSetID.int], v)
+    let t = gr1.getAnyTagG([QuoteSetID.int], v)
     if 0 == t:
       break
     echo t, ": ", v
-    discard f.tagAnyStr([NoQuoteEntries.int], v)
+    let gr2 = f.getGroup(GrpNoQuoteEntries)
     # echo "count: ", v
     while true:
-      let t = f.getAnyTagGrp(grpII, [BidSpotRate.int, OfferSpotRate.int], v)
-      if 0 == t:
-        break
-      # echo t, ": ", v
-  let t = f.tagAnyStr([CheckSum.int], v)
-  # echo t, ": ", v
-
-test "fixstr1 iter":
-  var f = initFix(s[4])
-  check 'i' == f.getChar(MsgType.int)
-  var v: string
-  while true:
-    if not f.tagStr(QuoteSetID.int, v):
-      break
-    discard f.tagAnyStr([NoQuoteEntries.int], v)
-    echo "302: ", v, "    count: ", v
-    while true:
-      let t = f.getAnyTagGrp(grpII, [BidSpotRate.int, OfferSpotRate.int], v)
+      let t = gr2.getAnyTagG([BidSpotRate.int, OfferSpotRate.int], v)
       if 0 == t:
         break
       echo t, ": ", v
   let t = f.tagAnyStr([CheckSum.int], v)
   echo t, ": ", v
 
-test "fixstr1 iter until":
-  var f = initFix(s[4])
-  check 'i' == f.getChar(MsgType.int)
-  var v: string
-  while true:
-    if not f.tagStr(QuoteSetID.int, v):
-      break
-    discard f.tagAnyStr([NoQuoteEntries.int], v)
-    echo "302: ", v, "    count: ", v
-    while true:
-      let t = f.tagAnyStrUntil([BidSpotRate.int, OfferSpotRate.int], 295, v)
-      if 0 == t:
-        break
-      echo t, ": ", v
-  let t = f.tagAnyStr([CheckSum.int], v)
-  echo t, ": ", v
+# test "fixstr1 iter":
+#   var f = initFix(s[4])
+#   check 'i' == f.getChar(MsgType.int)
+#   var v: string
+#   while true:
+#     if not f.tagStr(QuoteSetID.int, v):
+#       break
+#     discard f.tagAnyStr([NoQuoteEntries.int], v)
+#     echo "302: ", v, "    count: ", v
+#     while true:
+#       let t = f.getAnyTagGrp(grpII, [BidSpotRate.int, OfferSpotRate.int], v)
+#       if 0 == t:
+#         break
+#       echo t, ": ", v
+#   let t = f.tagAnyStr([CheckSum.int], v)
+#   echo t, ": ", v
+
+# test "fixstr1 iter until":
+#   var f = initFix(s[4])
+#   check 'i' == f.getChar(MsgType.int)
+#   var v: string
+#   while true:
+#     if not f.tagStr(QuoteSetID.int, v):
+#       break
+#     discard f.tagAnyStr([NoQuoteEntries.int], v)
+#     echo "302: ", v, "    count: ", v
+#     while true:
+#       let t = f.tagAnyStrUntil([BidSpotRate.int, OfferSpotRate.int], 295, v)
+#       if 0 == t:
+#         break
+#       echo t, ": ", v
+#   let t = f.tagAnyStr([CheckSum.int], v)
+#   echo t, ": ", v

@@ -67,15 +67,15 @@ benchmark cfg:
     var f = initFix(s4)
     doAssert 'i' == f.getChar(MsgType.int)
     var v: string
-    discard f.tagAnyStr([NoQuoteSets.int], v)
-    doAssert "5" == v
+    let gr1 = f.getGroup(GrpNoQuoteSets)
+    doAssert 5 == gr1.len
     while true:
-      let t = f.getAnyTagGrp(grpI, [QuoteSetID.int], v)
+      let t = gr1.getAnyTagG([QuoteSetID.int], v)
       if 0 == t:
         break
-      discard f.tagAnyStr([NoQuoteEntries.int], v)
+      let gr2 = f.getGroup(GrpNoQuoteEntries)
       while true:
-        let t = f.getAnyTagGrp(grpII, [BidSpotRate.int, OfferSpotRate.int], v)
+        let t = gr2.getAnyTagG([BidSpotRate.int, OfferSpotRate.int], v)
         if 0 == t:
           break
     let t = f.tagAnyStr([CheckSum.int], v)
@@ -89,7 +89,7 @@ benchmark cfg:
         break
       discard f.tagAnyStr([NoQuoteEntries.int], v)
       while true:
-        let t = f.getAnyTagGrp(grpII, [BidSpotRate.int, OfferSpotRate.int], v)
+        let t = f.getAnyTagGrp(GrpNoQuoteEntries.fields, [BidSpotRate.int, OfferSpotRate.int], v)
         if 0 == t:
           break
     let t = f.tagAnyStr([CheckSum.int], v)
@@ -103,7 +103,7 @@ benchmark cfg:
         break
       discard f.tagAnyStr([NoQuoteEntries.int], v)
       while true:
-        let t = f.getAnyTagGrp(grpII, [BidSpotRate.int, OfferSpotRate.int], v)
+        let t = f.getAnyTagGrp(GrpNoQuoteEntries.fields, [BidSpotRate.int, OfferSpotRate.int], v)
         if 0 == t:
           break
     let t = f.tagAnyStr([CheckSum.int], v)
