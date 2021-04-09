@@ -24,48 +24,6 @@ proc initFix*(msg: string): StreamFixRef =
   result.pos = 0
   result.len = result.msg.len
 
-proc getAnyTagGrp*[N: static(int), T](fs: StreamFixRef, grp: GroupSet, tag: array[N, int], val: var T): int =
-  while fs.pos < fs.len:
-    let prev = fs.pos
-    while fs.msg[fs.pos] != '=':
-      result = result * 10 + fs.msg[fs.pos].int - '0'.int
-      inc fs.pos
-    inc fs.pos
-    if tag.contains(result):
-      when T is string:
-        let start = fs.pos
-        while fs.msg[fs.pos] != DELIMITER:
-          inc fs.pos
-        val = fs.msg[start..<fs.pos]
-      elif T is char:
-        let start = fs.pos
-        while fs.msg[fs.pos] != DELIMITER:
-          inc fs.pos
-        val = fs.msg[start]
-      elif T is int:
-        while fs.msg[fs.pos] != DELIMITER:
-          val = val * 10 + fs.msg[fs.pos].int - '0'.int
-          inc fs.pos
-      elif T is uint:
-        while fs.msg[fs.pos] != DELIMITER:
-          val = val * 10 + fs.msg[fs.pos].uint - '0'.uint
-          inc fs.pos
-      elif T is float:
-        discard parseFloat(fs.msg, val, fs.pos)
-      else:
-        {.error: "getTag does not support the generic type".}
-      inc fs.pos
-      return
-    elif result in grp:
-      result = 0
-      while fs.msg[fs.pos] != DELIMITER:
-        inc fs.pos
-      inc fs.pos
-    else:
-      result = 0
-      fs.pos = prev
-      return
-
 proc getAnyTag*[N: static(int), T](fs: StreamFixRef, tag: array[N, int], val: var T): int =
   var pos = fs.pos
   while pos < fs.len:
@@ -84,10 +42,51 @@ proc getAnyTag*[N: static(int), T](fs: StreamFixRef, tag: array[N, int], val: va
           inc fs.pos
         val = fs.msg[pos]
       elif T is int:
+        val = 0
         while fs.msg[fs.pos] != DELIMITER:
           val = val * 10 + fs.msg[fs.pos].int - '0'.int
           inc fs.pos
       elif T is uint:
+        val = 0
+        while fs.msg[fs.pos] != DELIMITER:
+          val = val * 10 + fs.msg[fs.pos].uint - '0'.uint
+          inc fs.pos
+      elif T is float:
+        fs.pos += parseFloat(fs.msg, val, fs.pos)
+      else:
+        {.error: "getTag does not support the generic type".}
+      inc fs.pos
+      return
+    else:
+      result = 0
+      while fs.msg[pos] != DELIMITER:
+        inc pos
+      inc pos
+
+proc getTag*[T](fs: StreamFixRef, tag: int, val: var T): int =
+  var pos = fs.pos
+  while pos < fs.len:
+    while fs.msg[pos] != '=':
+      result = result * 10 + fs.msg[pos].int - '0'.int
+      inc pos
+    inc pos
+    if result == tag:
+      fs.pos = pos
+      when T is string:
+        while fs.msg[fs.pos] != DELIMITER:
+          inc fs.pos
+        val = fs.msg[pos..<fs.pos]
+      elif T is char:
+        while fs.msg[fs.pos] != DELIMITER:
+          inc fs.pos
+        val = fs.msg[pos]
+      elif T is int:
+        val = 0
+        while fs.msg[fs.pos] != DELIMITER:
+          val = val * 10 + fs.msg[fs.pos].int - '0'.int
+          inc fs.pos
+      elif T is uint:
+        val = 0
         while fs.msg[fs.pos] != DELIMITER:
           val = val * 10 + fs.msg[fs.pos].uint - '0'.uint
           inc fs.pos
@@ -121,10 +120,12 @@ proc getAnyTagUntil*[N: static(int), T](fs: StreamFixRef, tag: array[N, int], un
           inc fs.pos
         val = fs.msg[pos]
       elif T is int:
+        val = 0
         while fs.msg[fs.pos] != DELIMITER:
           val = val * 10 + fs.msg[fs.pos].int - '0'.int
           inc fs.pos
       elif T is uint:
+        val = 0
         while fs.msg[fs.pos] != DELIMITER:
           val = val * 10 + fs.msg[fs.pos].uint - '0'.uint
           inc fs.pos
@@ -149,7 +150,47 @@ proc getGroup*[N,F](fs: StreamFixRef, gd: static GroupDesc[N, F]): Group[F] =
   return
 
 proc getAnyTagG*[N: static(int), T](g: Group, tag: array[N, int], val: var T): int =
-  getAnyTagGrp[N, T](g.sf, g.grp, tag, val)
+  let fs = g.sf
+  while fs.pos < fs.len:
+    let prev = fs.pos
+    while fs.msg[fs.pos] != '=':
+      result = result * 10 + fs.msg[fs.pos].int - '0'.int
+      inc fs.pos
+    inc fs.pos
+    if tag.contains(result):
+      when T is string:
+        let start = fs.pos
+        while fs.msg[fs.pos] != DELIMITER:
+          inc fs.pos
+        val = fs.msg[start..<fs.pos]
+      elif T is char:
+        let start = fs.pos
+        while fs.msg[fs.pos] != DELIMITER:
+          inc fs.pos
+        val = fs.msg[start]
+      elif T is int:
+        while fs.msg[fs.pos] != DELIMITER:
+          val = val * 10 + fs.msg[fs.pos].int - '0'.int
+          inc fs.pos
+      elif T is uint:
+        while fs.msg[fs.pos] != DELIMITER:
+          val = val * 10 + fs.msg[fs.pos].uint - '0'.uint
+          inc fs.pos
+      elif T is float:
+        discard parseFloat(fs.msg, val, fs.pos)
+      else:
+        {.error: "getTag does not support the generic type".}
+      inc fs.pos
+      return
+    elif result in g.grp:
+      result = 0
+      while fs.msg[fs.pos] != DELIMITER:
+        inc fs.pos
+      inc fs.pos
+    else:
+      result = 0
+      fs.pos = prev
+      return
 
 template mkTag(name: untyped, t: untyped) =
   proc `tag name`*(fs: StreamFixRef, tag: int, val: var t): bool = 0 < getAnyTag[1, t](fs, [tag], val)

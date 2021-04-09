@@ -54,7 +54,46 @@ proc tag3(fs: FS, tag: cstring): cstring =
 var cfg = newDefaultConfig()
 
 benchmark cfg:
+  let s0 = readLines("tests/test2.fix", 5)[0]
+  let s1 = readLines("tests/test2.fix", 5)[1]
+  let s2 = readLines("tests/test2.fix", 5)[2]
+  let s3 = readLines("tests/test2.fix", 5)[3]
   let s4 = readLines("tests/test2.fix", 5)[4]
+
+  proc fix1(): int =
+    var s: string
+    var i: int
+    var c: char
+    var f = initFix(s0)
+    discard f.tagStr(8, s)
+    doAssert "FIX.4.2" == s
+    discard f.tagInt(9, i)
+    doAssert 101 == i
+    discard f.tagChar(35, c)
+    doAssert 'e' == c
+    discard f.tagStr(49, s)
+    doAssert "TTTTTTT6" == s
+    discard f.tagStr(56, s)
+    doAssert "872" == s
+    discard f.tagStr(5555, s)
+    doAssert "6236.83333333" == s
+    discard f.tagInt(34, i)
+    doAssert 99 == i
+    discard f.tagStr(52, s)
+    doAssert "20140709-14:43:12.934" == s
+    discard f.tagChar(7777, c)
+    doAssert 'Y' == c
+    discard f.tagStr(57, s)
+    doAssert "ARCA" == s
+    discard f.tagInt(108, i)
+    doAssert 60 == i
+    discard f.tagInt(98, i)
+    doAssert 0 == i
+    discard f.tagStr(10, s)
+    doAssert "114" == s
+
+  proc benchFix1() {.measure.} =
+    blackBox fix1()
 
   proc fix1R(): int =
     var f = initFix(s4)
@@ -80,73 +119,23 @@ benchmark cfg:
           break
     let t = f.tagAnyStr([CheckSum.int], v)
 
-  proc fix2A(): int =
-    var f = initFix(s4)
-    doAssert 'i' == f.getChar(MsgType.int)
-    var v: string
-    while true:
-      if not f.tagStr(QuoteSetID.int, v):
-        break
-      discard f.tagAnyStr([NoQuoteEntries.int], v)
-      while true:
-        let t = f.getAnyTagGrp(GrpNoQuoteEntries.fields, [BidSpotRate.int, OfferSpotRate.int], v)
-        if 0 == t:
-          break
-    let t = f.tagAnyStr([CheckSum.int], v)
+  # proc benchFix1A() {.measure.} =
+  #   blackBox fix1A()
 
-  proc fix3A(): int =
-    var f = initFix(s4)
-    doAssert 'i' == f.getChar(MsgType.int)
-    var v: string
-    while true:
-      if not f.tagStr(QuoteSetID.int, v):
-        break
-      discard f.tagAnyStr([NoQuoteEntries.int], v)
-      while true:
-        let t = f.getAnyTagGrp(GrpNoQuoteEntries.fields, [BidSpotRate.int, OfferSpotRate.int], v)
-        if 0 == t:
-          break
-    let t = f.tagAnyStr([CheckSum.int], v)
+  # proc benchFix2A() {.measure.} =
+  #   blackBox fix2A()
 
-  proc fix4A(): int =
-    var f = initFix(s4)
-    doAssert 'i' == f.getChar(MsgType.int)
-    var v: string
-    while true:
-      if not f.tagStr(QuoteSetID.int, v):
-        break
-      discard f.tagAnyStr([NoQuoteEntries.int], v)
-      while true:
-        let t = f.tagAnyStrUntil([BidSpotRate.int, OfferSpotRate.int], 295, v)
-        if 0 == t:
-          break
-    let t = f.tagAnyStr([CheckSum.int], v)
 
-  # proc benchFix1R() {.measure.} =
-  #   blackBox fix1R()
+  # proc fix2(): int =
+  #   var f = initFix2(s4)
+  #   for i in 1..20:
+  #     result += f.tag2("190=").len
 
-  proc benchFix1A() {.measure.} =
-    blackBox fix1A()
-
-  proc benchFix2A() {.measure.} =
-    blackBox fix2A()
-
-  proc benchFix3A() {.measure.} =
-    blackBox fix3A()
-
-  proc benchFix4A() {.measure.} =
-    blackBox fix4A()
-
-  proc fix2(): int =
-    var f = initFix2(s4)
-    for i in 1..20:
-      result += f.tag2("190=").len
-
-  proc fix3(): int =
-    var f = initFix3(s4)
-    for i in 1..20:
-      result += f.tag3("190=").len
-    c_free(f.c)
+  # proc fix3(): int =
+  #   var f = initFix3(s4)
+  #   for i in 1..20:
+  #     result += f.tag3("190=").len
+  #   c_free(f.c)
 
   # proc benchFix2() {.measure.} =
   #   blackBox fix2()
