@@ -1,6 +1,7 @@
 type
   GroupRange = range[0..980]
-  GroupDesc[num: static int, fields: static set[GroupRange]] = object
+  GroupSet = set[GroupRange]
+  GroupDesc[num: static int, fields: static GroupSet] = object
 
 const GrpNoHops* = GroupDesc[627, {628.GroupRange, 629, 630}]()
 const GrpNoIOIQualifiers* = GroupDesc[199, {104.GroupRange}]()
