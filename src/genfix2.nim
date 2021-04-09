@@ -127,7 +127,7 @@ proc genParseGroup(n: string, gen: Gen, fields: Fields) =
       continue
     fs.add $fields[f].num
 
-  echo "const Grp", n, "* = GroupDesc[", $fields[n].num ,", GroupSet {", fs.join(", ") , "}]()"
+  echo "const Grp", n, "* = GroupDesc[", $fields[n].num ,", {", fs.join(", ") , "}]()"
 #   echo "proc parse", n, "(s: string, r: var seq[", n ,"""], pos: var int) =
 #   var
 #     t, sep: int
@@ -210,8 +210,7 @@ proc genStruct(xml: XmlNode, name: string, fields: Fields, components: Component
 
   echo "type"
   echo "  GroupRange = range[0..980]"
-  echo "  GroupSet = set[GroupRange]"
-  echo "  GroupDesc[num: static int, fields: static GroupSet] = object"
+  echo "  GroupDesc[num: static int, fields: static set[GroupRange]] = object"
   echo()
 
   for n, g in groups:
