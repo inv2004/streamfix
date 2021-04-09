@@ -164,11 +164,25 @@ mkTag(UInt, uint)
 mkTag(Float, float)
 
 proc main() =
-  let s = readLines("tests/test1.fix", 5)
-  var f1 = initFix(s[4])
-  var res: string
-  for i in 1..20:
-    discard f1.tagStr(190, res)
+  let s = readLines("tests/test2.fix", 5)
+  var f = initFix(s[4])
+  doAssert 'i' == f.getChar(MsgType.int)
+  var v: string
+  let gr1 = f.getGroup(GrpNoQuoteSets)
+  doAssert 5 == gr1.len
+  while true:
+    let t = gr1.getAnyTagG([QuoteSetID.int], v)
+    if 0 == t:
+      break
+    echo t, ": ", v
+    let gr2 = f.getGroup(GrpNoQuoteEntries)
+    while true:
+      let t = gr2.getAnyTagG([BidSpotRate.int, OfferSpotRate.int], v)
+      if 0 == t:
+        break
+      echo t, ": ", v
+  let t = f.tagAnyStr([CheckSum.int], v)
+  echo t, ": ", v
 
 when isMainModule:
   main()
