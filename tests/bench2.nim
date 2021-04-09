@@ -95,29 +95,152 @@ benchmark cfg:
   proc benchFix1() {.measure.} =
     blackBox fix1()
 
-  proc fix1R(): int =
-    var f = initFix(s4)
-    var res: string
-    for i in 1..20:
-      if f.tagStr(190, res):
-        result += res.len
+  proc fix42grp(): int =
+    var s: string
+    var i: int
+    var c: char
+    var f = initFix(s1)
+    discard f.tagStr(8, s)
+    doAssert "FIX.4.2" == s
+    discard f.tagInt(9, i)
+    doAssert 157 == i
+    discard f.tagChar(35, c)
+    doAssert 'a' == c
+    discard f.tagStr(49, s)
+    doAssert "TTTTTTT6" == s
+    discard f.tagStr(56, s)
+    doAssert "44611" == s
+    discard f.tagStr(5555, s)
+    doAssert "11855.33" == s
+    discard f.tagInt(34, i)
+    doAssert 58 == i
+    discard f.tagStr(52, s)
+    doAssert "20140709-15:01:26.209" == s
 
-  proc fix1A(): int =
-    var f = initFix(s4)
+    let gr1 = f.getGroup(GrpNoRelatedSym)
+    while true:
+      if 0 == gr1.getAnyTagG([55], s):
+        break
+      if i == 0:
+        discard gr1.getAnyTagG([64], s)
+        discard gr1.getAnyTagG([107], s)
+      else:
+        discard gr1.getAnyTagG([64], s)
+        discard gr1.getAnyTagG([107], s)
+
+    discard f.tagChar(777, c)
+    doAssert 'Y' == c
+    discard f.tagStr(57, s)
+    doAssert "ARCA" == s
+    discard f.tagInt(108, i)
+    doAssert 60 == i
+    discard f.tagInt(98, i)
+    doAssert 0 == i
+    discard f.tagStr(10, s)
+    doAssert "114" == s
+
+
+  proc benchFix42Grp() {.measure.} =
+    blackBox fix42grp()
+
+  proc fix42grpsub(): int =
+    var s: string
+    var i: int
+    var c: char
+    var f = initFix(s2)
+    discard f.tagStr(8, s)
+    doAssert "FIX.4.2" == s
+    discard f.tagInt(9, i)
+    doAssert 272 == i
+    discard f.tagChar(35, c)
+    doAssert 'a' == c
+    discard f.tagStr(49, s)
+    doAssert "TTTTTTT6" == s
+    discard f.tagStr(56, s)
+    doAssert "63016" == s
+    discard f.tagStr(5555, s)
+    doAssert "4592.00" == s
+    discard f.tagInt(34, i)
+    doAssert 64 == i
+    discard f.tagStr(52, s)
+    doAssert "20140709-19:38:42.653" == s
+
+    let gr1 = f.getGroup(GrpNoRelatedSym)
+    i = 0
+    while true:
+      if 0 == gr1.getAnyTagG([55], s):
+        break
+      discard gr1.getAnyTagG([64], s)
+      discard gr1.getAnyTagG([107], s)
+      let gr2 = f.getGroup(GrpNoNested3PartyIDs)
+      while true:
+        if 0 == gr2.getAnyTagG([949], s):
+          break
+        discard gr2.getAnyTagG([950], s)
+
+    discard f.tagChar(777, c)
+    doAssert 'Y' == c
+    discard f.tagStr(57, s)
+    doAssert "ARCA" == s
+    discard f.tagInt(108, i)
+    doAssert 60 == i
+    discard f.tagInt(98, i)
+    doAssert 0 == i
+    discard f.tagStr(10, s)
+    doAssert "114" == s
+
+  proc benchFix42GrpSub() {.measure.} =
+    blackBox fix42grpsub()
+
+  proc fix42pxm314(): int =
+    var f = initFix(s3)
     doAssert 'i' == f.getChar(MsgType.int)
     var v: string
     let gr1 = f.getGroup(GrpNoQuoteSets)
-    doAssert 5 == gr1.len
     while true:
       let t = gr1.getAnyTagG([QuoteSetID.int], v)
       if 0 == t:
         break
       let gr2 = f.getGroup(GrpNoQuoteEntries)
       while true:
-        let t = gr2.getAnyTagG([BidSpotRate.int, OfferSpotRate.int], v)
+        let t = gr2.getAnyTagG([QuoteEntryID.int], v)
         if 0 == t:
           break
-    let t = f.tagAnyStr([CheckSum.int], v)
+        discard gr2.getAnyTagG([Issuer.int], v)
+        discard gr2.getAnyTagG([BidSize.int, OfferSize.int], v)
+        discard gr2.getAnyTagG([BidSpotRate.int, OfferSpotRate.int], v)
+
+  proc benchFix42Pxm314() {.measure.} =
+    blackBox fix42pxm314()
+
+  proc fix42pxm1k(): int =
+    var f = initFix(s4)
+    doAssert 'i' == f.getChar(MsgType.int)
+    var v: string
+    let gr1 = f.getGroup(GrpNoQuoteSets)
+    while true:
+      let t = gr1.getAnyTagG([QuoteSetID.int], v)
+      if 0 == t:
+        break
+      let gr2 = f.getGroup(GrpNoQuoteEntries)
+      while true:
+        let t = gr2.getAnyTagG([QuoteEntryID.int], v)
+        if 0 == t:
+          break
+        discard gr2.getAnyTagG([Issuer.int], v)
+        discard gr2.getAnyTagG([BidSize.int, OfferSize.int], v)
+        discard gr2.getAnyTagG([BidSpotRate.int, OfferSpotRate.int], v)
+
+  proc benchFix42Pxm1k() {.measure.} =
+    blackBox fix42pxm1k()
+
+  # proc fix1R(): int =
+  #   var f = initFix(s4)
+  #   var res: string
+  #   for i in 1..20:
+  #     if f.tagStr(190, res):
+  #       result += res.len
+
 
   # proc benchFix1A() {.measure.} =
   #   blackBox fix1A()

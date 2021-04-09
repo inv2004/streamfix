@@ -92,23 +92,23 @@ test "fix42 group+subgroup ":
   var s: string
   var i: int
   var c: char
-  var f = initFix(fix[1])
+  var f = initFix(fix[2])
   check f.tagStr(8, s)
   check "FIX.4.2" == s
   check f.tagInt(9, i)
-  check 157 == i
+  check 272 == i
   check f.tagChar(35, c)
   check 'a' == c
   check f.tagStr(49, s)
   check "TTTTTTT6" == s
   check f.tagStr(56, s)
-  check "44611" == s
+  check "63016" == s
   check f.tagStr(5555, s)
-  check "11855.33" == s
+  check "4592.00" == s
   check f.tagInt(34, i)
-  check 58 == i
+  check 64 == i
   check f.tagStr(52, s)
-  check "20140709-15:01:26.209" == s
+  check "20140709-19:38:42.653" == s
 
   let gr1 = f.getGroup(GrpNoRelatedSym)
   i = 0
@@ -118,7 +118,7 @@ test "fix42 group+subgroup ":
     if i == 0:
       check "AAPL" == s
       discard gr1.getAnyTagG([64], s)
-      check "65912" == s
+      check "61245" == s
       discard gr1.getAnyTagG([107], s)
       check "blah1" == s
       let gr2 = f.getGroup(GrpNoNested3PartyIDs)
@@ -138,7 +138,7 @@ test "fix42 group+subgroup ":
     else:
       check "IBM" == s
       discard gr1.getAnyTagG([64], s)
-      check "56132" == s
+      check "21785" == s
       discard gr1.getAnyTagG([107], s)
       check "blah2" == s
       let gr2 = f.getGroup(GrpNoNested3PartyIDs)
