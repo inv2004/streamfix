@@ -1,8 +1,8 @@
 from parseutils import parseFloat
 import intsets
 
-include fields44
-include groups
+include streamfix/fields44
+include streamfix/groups
 
 type
   StreamFix* = object
